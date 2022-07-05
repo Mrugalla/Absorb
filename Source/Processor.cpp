@@ -3,7 +3,6 @@
 
 namespace audio
 {
-
     juce::AudioProcessorEditor* Processor::createEditor()
     {
         return new gui::Editor(*this);
@@ -79,7 +78,8 @@ namespace audio
 
     bool ProcessorBackEnd::canAddBus(bool isInput) const
     {
-        return PPDHasSidechain ? isInput : false;
+        return false;
+        //return PPDHasSidechain ? isInput : false;
     }
 
     bool ProcessorBackEnd::isBusesLayoutSupported(const BusesLayout& layouts) const
@@ -90,10 +90,10 @@ namespace audio
         const auto mainIn = layouts.getMainInputChannelSet();
         const auto mainOut = layouts.getMainOutputChannelSet();
 
-        if (mainOut != stereo && mainOut != mono)
+        if (mainIn != mainOut)
             return false;
 
-        if (mainIn != mainOut)
+        if (mainOut != stereo && mainOut != mono)
             return false;
 
 #if PPDHasSidechain
@@ -103,9 +103,6 @@ namespace audio
             if (!scIn.isDisabled())
                 if (scIn != stereo && scIn != mono)
                     return false;
-
-            if (mainOut != scIn)
-                return false;
         }
 #endif
         return true;
