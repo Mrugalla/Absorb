@@ -78,8 +78,7 @@ namespace audio
 
     bool ProcessorBackEnd::canAddBus(bool isInput) const
     {
-        return false;
-        //return PPDHasSidechain ? isInput : false;
+        return PPDHasSidechain ? isInput : false;
     }
 
     bool ProcessorBackEnd::isBusesLayoutSupported(const BusesLayout& layouts) const
