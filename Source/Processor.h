@@ -68,9 +68,6 @@ namespace audio
         Oversampler oversampler;
 #endif
         Meters meters;
-#if PPDHasSidechain
-        AudioBuffer scBuffer;
-#endif
 
         void forcePrepareToPlay();
 
@@ -78,12 +75,6 @@ namespace audio
 
         void processBlockBypassed(AudioBuffer&, juce::MidiBuffer&) override;
 
-    protected:
-        AudioBuffer* processBlockStart(AudioBuffer&, juce::MidiBuffer&) noexcept;
-
-        void processBlockEnd(AudioBuffer&) noexcept;
-    
-private:
 #if PPDHasStereoConfig
         bool midSideEnabled;
 #endif
@@ -100,7 +91,12 @@ private:
 
         void processBlock(AudioBuffer&, juce::MidiBuffer&);
         
-        void processBlockCustom(float** /*samples*/ , int /*numChannels*/, int /*numSamples*/) noexcept;
+        /* samples,numChannels,numSamples,samplesSC,numChannelsSC */
+        void processBlockCustom(float**, int, int
+#if PPDHasSidechain
+            , const float**, int
+#endif
+        ) noexcept;
 
         void releaseResources() override;
 

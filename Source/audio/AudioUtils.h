@@ -17,6 +17,7 @@ namespace audio
     using MIDIIt = juce::MidiBufferIterator;
     using MIDIRef = MIDIIt::reference;
     using Decibels = juce::Decibels;
+    using ScopedNoDenormals = juce::ScopedNoDenormals;
 
     using Smooth = smooth::Smooth<float>;
     using PID = param::PID;

@@ -259,7 +259,7 @@ namespace audio
 	{
 		Fs = _Fs;
 
-		const auto size = static_cast<int>(msInSamples(PPDPitchShifterSizeMs, Fs));
+		const auto size = static_cast<int>(msInSamples(static_cast<float>(PPDPitchShifterSizeMs), Fs));
 
 		wHead.prepare(_blockSize, size);
 

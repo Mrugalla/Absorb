@@ -2,9 +2,9 @@
 
 namespace audio
 {
-	/*samples, numSamples*/
-	void encodeMS(float**, int) noexcept;
+	/*samples, numSamples, chStart*/
+	void encodeMS(float**, int, int) noexcept;
 	
-	/*samples, numSamples*/
-	void decodeMS(float**, int) noexcept;
+	/*samples, numSamples, chStart*/
+	void decodeMS(float**, int, int) noexcept;
 }

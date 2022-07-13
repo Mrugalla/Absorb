@@ -115,7 +115,7 @@ namespace audio
 	void Convolver::prepare()
 	{
 		irSize = static_cast<int>(ir.size());
-		ring.setSize(2, irSize, false, true, false);
+		ring.setSize(2 + (PPDHasSidechain ? 2 : 0), irSize, false, true, false);
 	}
 
 	void Convolver::processBlock(float** samples, int numChannels, int numSamples) noexcept
@@ -203,7 +203,8 @@ namespace audio
 
 		numSamples1x(0), numSamples2x(0),
 
-		enabled(true)
+		enabled(true),
+		enbld(false)
 	{
 	}
 
@@ -233,6 +234,8 @@ namespace audio
 
 		if (enbld)
 		{
+			const auto numChannels = 2 + (PPDHasSidechain ? 2 : 0);
+
 			FsUp = Fs * 2.;
 			blockSizeUp = blockSize * 2;
 
@@ -242,7 +245,7 @@ namespace audio
 			filterUp.prepare();
 			filterDown.prepare();
 
-			buffer.setSize(2, blockSizeUp, false, true, false);
+			buffer.setSize(numChannels, blockSizeUp, false, true, false);
 			wHead.prepare(blockSizeUp, static_cast<int>(irDown.size()));
 		}
 		else

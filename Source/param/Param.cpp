@@ -814,7 +814,7 @@ namespace param
 		params.push_back(makeParam(PID::GainIn, state, 0.f, makeRange::withCentre(PPD_GainIn_Min, PPD_GainIn_Max, 0.f), Unit::Decibel));
 #endif
 		params.push_back(makeParam(PID::Mix, state));
-		params.push_back(makeParam(PID::Gain, state, 0.f, makeRange::withCentre(PPD_GainOut_Min, PPD_GainIn_Max, 0.f), Unit::Decibel));
+		params.push_back(makeParam(PID::Gain, state, 0.f, makeRange::withCentre(PPD_GainOut_Min, PPD_GainOut_Max, 0.f), Unit::Decibel));
 #if PPDHasPolarity
 		params.push_back(makeParam(PID::Polarity, state, 0.f, makeRange::toggle(), Unit::Polarity));
 #endif

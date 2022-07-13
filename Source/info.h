@@ -16,7 +16,8 @@ HOW TO USE:
 	2.1 Rename plugin name
 	2.2 Define unique plugin ID
 	2.3 Configurate the pre processor definitions
-4. Open LowLevel.h and design all low level parameters, layout and stuff
+3. Code DSP in processBlockCustom
+4. Code GUI in lowlevel.cpp/h
 5. Ship it!
 
 
