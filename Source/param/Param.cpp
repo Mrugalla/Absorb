@@ -41,8 +41,11 @@ namespace param
 		case PID::Power: return "Power";
 
 			// LOW LEVEL PARAMS:
-		case PID::CrushGain: return "Crush Gain";
-		case PID::AnotherDummyParam: return "AnotherDummyParam";
+		case PID::AbsorbRM: return "Absorb RM";
+		case PID::AbsorbAM: return "Absorb AM";
+		case PID::AbsorbShapr: return "Absorb Shapr";
+		case PID::AbsorbCrushr: return "Absorb Crushr";
+		case PID::AbsorbFoldr: return "Absorb Foldr";
 
 		default: return "Invalid Parameter Name";
 		}
@@ -85,7 +88,11 @@ namespace param
 
 		case PID::Power: return "Bypass the plugin with this parameter.";
 
-		case PID::CrushGain: return "Default Parameter Tooltip Txt";
+		case PID::AbsorbRM: return "Controls the volume of Absorb's Ring Modulator.";
+		case PID::AbsorbAM: return "Controls the volume of Absorb's Amplitude Modulator.";
+		case PID::AbsorbShapr: return "Controls the volume of Absorb's Waveshaper.";
+		case PID::AbsorbCrushr: return "Controls the volume of Absorb's Bitcrusher.";
+		case PID::AbsorbFoldr: return "Controls the volume of Absorb's Wavefolder.";
 
 		default: return "Invalid Tooltip.";
 		}
@@ -554,14 +561,17 @@ namespace param::strToVal
 				return 0.f;
 
 			const auto text = txt.trimCharactersAtEnd("MSLR").toLowerCase();
+#if PPDHasStereoConfig
 			const auto sc = prms[PID::StereoConfig];
 			if (sc->getValMod() < .5f)
+#endif
 			{
 				if (txt == "l" || txt == "left")
 					return -1.f;
 				else if (txt == "r" || txt == "right")
 					return 1.f;
 			}
+#if PPDHasStereoConfig
 			else
 			{
 
@@ -570,11 +580,14 @@ namespace param::strToVal
 				else if (txt == "s" || txt == "side")
 					return 1.f;
 			}
+#endif
 				
 			const auto val = p(text, 0.f);
 			return val * .01f;
 		};
 	}
+
+
 }
 
 namespace param::valToStr
@@ -696,10 +709,13 @@ namespace param::valToStr
 			if (v == 0.f)
 				return String("C");
 
+#if PPDHasStereoConfig
 			const auto sc = prms[PID::StereoConfig];
 			const auto vm = sc->getValMod();
 			const auto isMidSide = vm > .5f;
+
 			if (!isMidSide)
+#endif
 			{
 				if (v == -1.f)
 					return String("Left");
@@ -708,6 +724,7 @@ namespace param::valToStr
 				else
 					return String(std::floor(v * 100.f)) + (v < 0.f ? " L" : " R");
 			}
+#if PPDHasStereoConfig
 			else
 			{
 				if (v == -1.f)
@@ -717,6 +734,7 @@ namespace param::valToStr
 				else
 					return String(std::floor(v * 100.f)) + (v < 0.f ? " M" : " S");
 			}
+#endif
 		};
 	}
 
@@ -830,8 +848,11 @@ namespace param
 		params.push_back(makeParam(PID::Power, state, 1.f, makeRange::toggle(), Unit::Power));
 
 		// LOW LEVEL PARAMS:
-		params.push_back(makeParam(PID::CrushGain, state, 32.f, makeRange::withCentre(1.f, 128.f, 32.f)));
-		params.push_back(makeParam(PID::AnotherDummyParam, state, .5f, makeRange::withCentre(0.f, 1.f, .7f)));
+		params.push_back(makeParam(PID::AbsorbRM, state, -20.f, makeRange::withCentre(-20.f, 60.f, 0.f), Unit::Decibel));
+		params.push_back(makeParam(PID::AbsorbAM, state, -20.f, makeRange::withCentre(-20.f, 60.f, 0.f), Unit::Decibel));
+		params.push_back(makeParam(PID::AbsorbShapr, state, -40.f, makeRange::withCentre(-40.f, 40.f, 0.f), Unit::Decibel));
+		params.push_back(makeParam(PID::AbsorbCrushr, state, -40.f, makeRange::withCentre(-40.f, 40.f, 0.f), Unit::Decibel));
+		params.push_back(makeParam(PID::AbsorbFoldr, state, -40.f, makeRange::withCentre(-40.f, 40.f, 0.f), Unit::Decibel));
 
 		// LOW LEVEL PARAMS END
 

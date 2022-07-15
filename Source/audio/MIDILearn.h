@@ -25,7 +25,11 @@ namespace audio
 		
 		void loadPatch();
 
-		void operator()(const MIDIBuffer&) noexcept;
+		void processBlockInit() noexcept;
+
+		void processBlockMIDICC(const MidiMessage& msg) noexcept;
+
+		void processBlockEnd() noexcept;
 
 		void assignParam(param::Param*) noexcept;
 		
@@ -37,6 +41,7 @@ namespace audio
 		std::atomic<param::Param*> assignableParam;
 		Params& params;
 		State& state;
+		int c;
 
 		String getIDString(int) const;
 	};

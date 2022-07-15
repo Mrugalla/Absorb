@@ -560,3 +560,303 @@ struct HighLevel :
 
 
 
+BESTE RESONATOR BUG:
+
+namespace audio
+{
+    
+
+    class AbsorbProcessor
+    {
+        struct NoteHandler
+        {
+            NoteHandler() :
+                readHead(0.f),
+                noteOnBuffer(),
+                
+                Fs(1.f),
+                curNote(-1.f),
+                curFreqSamples(0.f)
+            {}
+
+            void prepare(float sampleRate, int blockSize)
+            {
+                Fs = sampleRate;
+                readHead.prepare(Fs, blockSize, 10.f);
+                for (auto& r : readHead.buf)
+                    r = 0.f;
+
+                noteOnBuffer.resize(blockSize);
+            }
+
+            void operator()(float* noteBuf, const int* wHead, float resoSizeF, int numSamples) noexcept
+            {
+                auto rHeadBuf = readHead.buf.data();
+
+                for (auto s = 0; s < numSamples; ++s)
+                {
+                    auto nextNote = noteBuf[s];
+                    if (nextNote == 0.f)
+                        noteOnBuffer[s] = 0.f;
+                    else if (curNote != nextNote)
+                    {
+                        curNote = nextNote;
+                        auto freqHz = noteInFreqHz(curNote, 69.f, 12.f, 440.f);
+                        while (freqHz < 20.f)
+                            freqHz *= 2.f;
+
+                        curFreqSamples = freqHzInSamples(freqHz, Fs);
+
+                        const auto rHead = readHead(curFreqSamples);
+
+                        const auto w = static_cast<float>(wHead[s]);
+                        auto r = w - rHead;
+                        if (r < 0.f)
+                            r += resoSizeF;
+
+                        rHeadBuf[s] = r;
+                    }
+                    else
+                    {
+                        curFreqSamples = freqHzInSamples(curFreqSamples, Fs);
+
+                        const auto rHead = readHead(curFreqSamples);
+
+                        const auto w = static_cast<float>(wHead[s]);
+                        auto r = w - rHead;
+                        if (r < 0.f)
+                            r += resoSizeF;
+
+                        rHeadBuf[s] = r;
+                    }
+
+                    noteOnBuffer[s] = 1.f;
+                }
+            }
+
+            PRM readHead;
+            std::vector<float> noteOnBuffer;
+        protected:
+            float Fs, curNote, curFreqSamples;
+        };
+
+        struct Textures
+        {
+            Textures() :
+                rm(0.f),
+                am(0.f),
+                shapr(0.f),
+                crushr(0.f),
+                foldr(0.f)
+            {}
+
+            void prepare(float sampleRate, int blockSize)
+            {
+                rm.prepare(sampleRate, blockSize, 10.f);
+                am.prepare(sampleRate, blockSize, 10.f);
+                shapr.prepare(sampleRate, blockSize, 10.f);
+                crushr.prepare(sampleRate, blockSize, 10.f);
+                foldr.prepare(sampleRate, blockSize, 10.f);
+            }
+
+            void operator()(float** samples, int numChannels, int numSamples,
+                float** samplesSC, int numChannelsSC,
+                float _rm, float _am, float _shapr, float _crushr, float _foldr) noexcept
+            {
+                auto rmBuf = rm(Decibels::decibelsToGain(_rm, -20.f), numSamples);
+                auto amBuf = am(Decibels::decibelsToGain(_am, -20.f), numSamples);
+                auto shaprBuf = shapr(Decibels::decibelsToGain(_shapr, -40.f), numSamples);
+                auto crushrBuf = crushr(Decibels::decibelsToGain(_crushr, -40.f), numSamples);
+                auto foldrBuf = foldr(Decibels::decibelsToGain(_foldr, -40.f), numSamples);
+
+                for (auto ch = 0; ch < numChannels; ++ch)
+                {
+                    const auto chSC = ch % numChannelsSC;
+                    const auto smplsSC = samplesSC[chSC];
+
+                    auto smpls = samples[ch];
+
+                    float A, B, C, D, E;
+
+                    for (auto s = 0; s < numSamples; ++s)
+                    {
+                        const auto main = smpls[s];
+                        const auto sc = smplsSC[s];
+
+                        A = main * sc * rmBuf[s];
+
+                        const auto scsc = sc * sc;
+                        const auto scscSqrt = std::sqrt(scsc);
+
+                        B = main * scscSqrt * amBuf[s];
+
+                        if (sc == 0.f)
+                        {
+                            C = D = E = 0.f;
+                        }
+                        else
+                        {
+                            const auto mainInvSc = main / sc;
+
+                            C = std::tanh(mainInvSc) * sc * shaprBuf[s];
+                            D = std::rint(mainInvSc) * sc * crushrBuf[s];
+
+                            E = std::fmod(main, sc) * sc * foldrBuf[s];
+                        }
+
+                        smpls[s] = A + B + C + D + E;
+                    }
+                }
+            }
+
+        protected:
+            PRM rm, am, shapr, crushr, foldr;
+        };
+
+        struct Resonator
+        {
+            Resonator() :
+                ringBuffer(),
+                lowpass{ 0.f, 0.f },
+                feedback(0.f),
+                Fs(1.f)
+            {}
+
+            void prepare(float sampleRate, int blockSize, int size)
+            {
+                Fs = sampleRate;
+
+                for (auto& r : ringBuffer)
+                    r.resize(size);
+
+                feedback.prepare(Fs, blockSize, 10.f);
+            }
+
+            void operator()(float** samples, int numChannels, int numSamples,
+                const int* wHead, const float* rHeadBuf, const float* noteOnBuf, int size,
+                float _feedback, float _lp) noexcept
+            {
+                const auto fbBuf = feedback(_feedback, numSamples);
+
+                lowpass[0].makeFromDecayInHz(_lp, Fs);
+
+                for (auto ch = 0; ch < numChannels; ++ch)
+                {
+                    auto smpls = samples[ch];
+                    auto ring = ringBuffer[ch].data();
+
+                    auto& lp = lowpass[ch];
+                    lp.copyCutoffFrom(lowpass[0]);
+
+                    for (auto s = 0; s < numSamples; ++s)
+                    {
+                        const auto w = wHead[s];
+                        const auto r = rHeadBuf[s];
+                        const auto fb = fbBuf[s] * noteOnBuf[s];
+
+                        const auto sOut = std::tanh(lp(interpolate::lerp(ring, r, size)));
+                        const auto sIn = smpls[s] + sOut * fb;
+
+                        ring[w] = sIn;
+                        smpls[s] = sOut;
+                    }
+                }
+            }
+
+        protected:
+            std::array<std::vector<float>, 2> ringBuffer;
+            std::array<Smooth, 2> lowpass;
+            PRM feedback;
+            float Fs;
+        };
+
+    public:
+        AbsorbProcessor(MIDIManager& midiManager) :
+            noteBuffer(),
+
+            wHead(),
+            noteHandler(),
+            textures(),
+            resonator(),
+
+            resonatorSizeF(1.f),
+            curNoteValue(0.f),
+            resonatorSize(1)
+        {
+            midiManager.onNoteOn.push_back([&](const MidiMessage& msg, int s)
+            {
+                noteBuffer[s] = curNoteValue = static_cast<float>(msg.getNoteNumber());
+            });
+
+            midiManager.onNoteOff.push_back([&](const MidiMessage&, int s)
+            {
+                noteBuffer[s] = curNoteValue = 0.f;
+            });
+
+            midiManager.onNoEvt.push_back([&](int s)
+            {
+                noteBuffer[s] = curNoteValue;
+            });
+        }
+
+        void prepare(float sampleRate, int blockSize)
+        {
+            resonatorSizeF = freqHzInSamples(20.f, sampleRate);
+            resonatorSize = static_cast<int>(resonatorSizeF);
+
+            noteBuffer.resize(blockSize);
+
+            wHead.prepare(blockSize, resonatorSize);
+
+            noteHandler.prepare(sampleRate, blockSize);
+            textures.prepare(sampleRate, blockSize);
+            resonator.prepare(sampleRate, blockSize, resonatorSize);
+        }
+
+        void operator()(float** samples, int numChannels, int numSamples,
+            float** samplesSC, int numChannelsSC,
+            float _rm, float _am, float _shapr, float _crushr, float _foldr,
+            float _resoFB, float _resoLP) noexcept
+        {
+            wHead(numSamples);
+
+            noteHandler(noteBuffer.data(), wHead.data(), resonatorSizeF, numSamples);
+
+            textures(samples, numChannels, numSamples, samplesSC, numChannelsSC,
+                _rm, _am, _shapr, _crushr, _foldr);
+
+            resonator(samples, numChannels, numSamples,
+                wHead.data(), noteHandler.readHead.buf.data(), noteHandler.noteOnBuffer.data(),
+                resonatorSize, _resoFB, _resoLP);
+        }
+
+    protected:
+        std::vector<float> noteBuffer;
+
+        WHead wHead;
+        NoteHandler noteHandler;
+        Textures textures;
+        Resonator resonator;
+
+        float resonatorSizeF, curNoteValue;
+        int resonatorSize;
+    };
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

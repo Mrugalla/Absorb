@@ -51,17 +51,17 @@ namespace gui
 
 	void Utils::assignMIDILearn(PID pID) noexcept
 	{
-		audioProcessor.midiLearn.assignParam(params[pID]);
+		audioProcessor.midiManager.midiLearn.assignParam(params[pID]);
 	}
 	
 	void Utils::removeMIDILearn(PID pID) noexcept
 	{
-		audioProcessor.midiLearn.removeParam(params[pID]);
+		audioProcessor.midiManager.midiLearn.removeParam(params[pID]);
 	}
 	
 	const audio::MIDILearn& Utils::getMIDILearn() const noexcept
 	{
-		return audioProcessor.midiLearn;
+		return audioProcessor.midiManager.midiLearn;
 	}
 
 	void Utils::resized()

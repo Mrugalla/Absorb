@@ -1,10 +1,46 @@
 #pragma once
-#include "AudioUtils.h"
+#include "MIDILearn.h"
+#include <functional>
 
 namespace audio
 {
 	struct MIDIManager
 	{
+		MIDIManager(Params& params, State& state) :
+			midiLearn(params, state),
+			onInit(),
+			onEnd(),
+			onCC(),
+			onNoteOn(),
+			onNoteOff(),
+			onNoEvt()
+		{
+			onInit.push_back([&learn = midiLearn]()
+			{
+				learn.processBlockInit();
+			});
+
+			onCC.push_back([&learn = midiLearn](const MidiMessage& msg, int)
+			{
+				learn.processBlockMIDICC(msg);
+			});
+
+			onEnd.push_back([&learn = midiLearn]()
+			{
+				learn.processBlockEnd();
+			});
+		}
+
+		void savePatch()
+		{
+			midiLearn.savePatch();
+		}
+
+		void loadPatch()
+		{
+			midiLearn.loadPatch();
+		}
+
 		void operator()(MIDIBuffer& midi, int numSamples) noexcept
 		{
 			if (midi.isEmpty())
@@ -13,7 +49,13 @@ namespace audio
 				processBlock(midi, numSamples);
 		}
 
+		MIDILearn midiLearn;
+
+		std::vector<std::function<void()>> onInit, onEnd;
+		std::vector<std::function<void(const MidiMessage&, int/*sample index*/)>> onCC, onNoteOn, onNoteOff;
+		std::vector<std::function<void(int/*sample index*/)>> onNoEvt;
 	protected:
+
 		void processEmpty(int/*numSamples*/) noexcept
 		{
 
@@ -21,6 +63,9 @@ namespace audio
 
 		void processBlock(MIDIBuffer& midi, int numSamples) noexcept
 		{
+			for (auto& func : onInit)
+				func();
+
 			auto evt = midi.begin();
 			auto ref = *evt;
 			auto ts = ref.samplePosition;
@@ -28,8 +73,8 @@ namespace audio
 			{
 				if (ts > s)
 				{
-					//bufNotes[s] = currentValue;
-					//bufEnv[s] = env() * SafetyCoeff;
+					for (auto& func : onNoEvt)
+						func(s);
 				}
 				else
 				{
@@ -40,36 +85,26 @@ namespace audio
 
 						if (msg.isNoteOn())
 						{
-							//noteValue = static_cast<float>(msg.getNoteNumber());
-							//currentValue = noteValue + pitchbendValue;
-							//noteOn = true;
-							//env.retrig();
+							for (auto& func : onNoteOn)
+								func(msg, s);
 						}
 						else if (msg.isNoteOff())
 						{
+							for (auto& func : onNoteOff)
+								func(msg, s);
 							//if (static_cast<int>(noteValue) == msg.getNoteNumber())
 							//	noteOn = false;
 						}
 						else if (msg.isPitchWheel())
 						{
-							const auto pwv = msg.getPitchWheelValue();
+							//const auto pwv = msg.getPitchWheelValue();
 							//pitchbendValue = static_cast<float>(pwv) * PBGain - 1.f;
 							//currentValue = noteValue + pitchbendValue;
 						}
 						else if (msg.isController())
 						{
-							//c = msg.getControllerNumber();
-							//if (c < ccBuf.size())
-							//{
-							//	auto& cc = ccBuf[c];
-							//	auto ap = assignableParam.load();
-							//	if (ap != nullptr)
-							//	{
-							//		cc.param.store(ap);
-							//		assignableParam.store(nullptr);
-							//	}
-							//	cc.setValue(msg.getControllerValue());
-							//}
+							for (auto& func : onCC)
+								func(msg, s);
 						}
 						++evt;
 						if (evt == midi.end())
@@ -84,6 +119,9 @@ namespace audio
 					//bufEnv[s] = env(noteOn) * SafetyCoeff;
 				}
 			}
+
+			for (auto& func : onEnd)
+				func();
 		}
 
 

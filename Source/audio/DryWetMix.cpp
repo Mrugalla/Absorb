@@ -113,10 +113,11 @@ namespace audio
 		auto mixBuf = bufs[MixW].data();
 		mixSmooth(mixBuf, mixP, numSamples);
 
+		gainP = Decibels::decibelsToGain(gainP);
 #if PPDHasPolarity
 		gainP *= polarityP;
 #endif
-		gainSmooth(bufs[Gain].data(), juce::Decibels::decibelsToGain(gainP), numSamples);
+		gainSmooth(bufs[Gain].data(), gainP, numSamples);
 
 #if PPDEqualLoudnessMix
 		for (auto s = 0; s < numSamples; ++s)

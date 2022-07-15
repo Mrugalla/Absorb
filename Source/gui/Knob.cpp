@@ -495,7 +495,9 @@ namespace gui
                     g.setColour(Colours::c(ColourID::Txt));
                     Path meterArc;
 
-                    const auto meterAngle = angleRange * vals[Meter] - angleWidth;
+                    const auto metr = vals[Meter] > 1.f ? 1.f : vals[Meter];
+
+                    const auto meterAngle = angleRange * metr - angleWidth;
 
                     meterArc.addCentredArc(
                         centre.x, centre.y,

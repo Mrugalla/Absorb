@@ -18,6 +18,7 @@ namespace audio
     using MIDIRef = MIDIIt::reference;
     using Decibels = juce::Decibels;
     using ScopedNoDenormals = juce::ScopedNoDenormals;
+    using MidiMessage = juce::MidiMessage;
 
     using Smooth = smooth::Smooth<float>;
     using PID = param::PID;
@@ -38,6 +39,12 @@ namespace audio
     }
 
     template<typename Float>
+    inline Float freqHzInSamples(Float hz, Float Fs) noexcept
+    {
+        return Fs / hz;
+    }
+
+    template<typename Float>
     inline float getRMS(const Float* ar, const int size) noexcept
     {
         auto rms = static_cast<Float>(0);
@@ -45,6 +52,18 @@ namespace audio
             rms += ar[i] * ar[i];
         rms /= static_cast<Float>(size);
         return std::sqrt(rms);
+    }
+
+    template<typename Float>
+    inline Float noteInFreqHz(Float note, Float rootNote = 69.f, Float xen = 12.f, Float masterTune = 440.f) noexcept
+    {
+        return std::pow(2.f, (note - rootNote) / xen) * masterTune;
+    }
+
+    template<typename Float>
+    inline Float noteInFreqHz(Float note, Float rootNote = 69.f, Float masterTune = 440.f) noexcept
+    {
+        return std::pow(2.f, (note - rootNote) * .08333333333f) * masterTune;
     }
 
 }

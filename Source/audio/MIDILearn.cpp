@@ -22,7 +22,8 @@ namespace audio
 		ccIdx(-1),
 		assignableParam(nullptr),
 		params(_params),
-		state(_state)
+		state(_state),
+		c(-1)
 	{
 	}
 
@@ -53,33 +54,31 @@ namespace audio
 		}
 	}
 
-	void MIDILearn::operator()(const MIDIBuffer& midiBuf) noexcept
+	void MIDILearn::processBlockInit() noexcept
 	{
-		int c = -1;
+		c = -1;
+	}
 
-		for (auto midi : midiBuf)
+	void MIDILearn::processBlockMIDICC(const MidiMessage& msg) noexcept
+	{
+		c = msg.getControllerNumber();
+		if (c < ccBuf.size())
 		{
-			auto msg = midi.getMessage();
+			auto& cc = ccBuf[c];
 
-			if (msg.isController())
+			auto ap = assignableParam.load();
+			if (ap != nullptr)
 			{
-				c = msg.getControllerNumber();
-				if (c < ccBuf.size())
-				{
-					auto& cc = ccBuf[c];
-
-					auto ap = assignableParam.load();
-					if (ap != nullptr)
-					{
-						cc.param.store(ap);
-						assignableParam.store(nullptr);
-					}
-
-					cc.setValue(msg.getControllerValue());
-				}
+				cc.param.store(ap);
+				assignableParam.store(nullptr);
 			}
-		}
 
+			cc.setValue(msg.getControllerValue());
+		}
+	}
+
+	void MIDILearn::processBlockEnd() noexcept
+	{
 		if (c != -1)
 			ccIdx.store(c);
 	}

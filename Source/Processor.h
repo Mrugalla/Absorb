@@ -3,15 +3,15 @@
 #include <juce_audio_processors/juce_audio_processors.h>
 #include <juce_events/juce_events.h>
 
+#include "audio/MIDIManager.h"
 #include "audio/MIDILearn.h"
 #include "audio/ProcessSuspend.h"
 #include "audio/DryWetMix.h"
 #include "audio/MidSide.h"
 #include "audio/Oversampling.h"
 #include "audio/Meter.h"
-#include "audio/Rectifier.h"
-#include "audio/Bitcrusher.h"
-#include "audio/NullNoiseSynth.h"
+
+#include "audio/AbsorbProcessor.h"
 
 #include "audio/AudioUtils.h"
 
@@ -61,7 +61,8 @@ namespace audio
         State state;
         Params params;
         MacroProcessor macroProcessor;
-        MIDILearn midiLearn;
+        MIDIManager midiManager;
+        //MIDILearn midiLearn;
 
         DryWetMix dryWetMix;
 #if PPDHasHQ
@@ -94,7 +95,7 @@ namespace audio
         /* samples,numChannels,numSamples,samplesSC,numChannelsSC */
         void processBlockCustom(float**, int, int
 #if PPDHasSidechain
-            , const float**, int
+            , float**, int
 #endif
         ) noexcept;
 
@@ -106,5 +107,6 @@ namespace audio
 
         juce::AudioProcessorEditor* createEditor() override;
 
+        AbsorbProcessor absorb;
     };
 }

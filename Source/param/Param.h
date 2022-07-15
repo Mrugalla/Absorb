@@ -38,8 +38,11 @@ namespace param
 		Power,
 
 		// low level parameters
-		CrushGain,
-		AnotherDummyParam,
+		AbsorbRM,
+		AbsorbAM,
+		AbsorbShapr,
+		AbsorbCrushr,
+		AbsorbFoldr,
 
 		NumParams
 	};

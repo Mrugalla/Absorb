@@ -29,7 +29,7 @@ namespace audio
         state(),
         params(*this, state),
         macroProcessor(params),
-        midiLearn(params, state),
+        midiManager(params, state),
 #if PPDHasHQ
         oversampler(),
 #endif
@@ -115,13 +115,13 @@ namespace audio
     void ProcessorBackEnd::savePatch()
     {
         params.savePatch(props);
-        midiLearn.savePatch();
+        midiManager.savePatch();
     }
 
     void ProcessorBackEnd::loadPatch()
     {
         params.loadPatch(props);
-        midiLearn.loadPatch();
+        midiManager.loadPatch();
         forcePrepareToPlay();
     }
 
@@ -185,7 +185,8 @@ namespace audio
     // PROCESSOR
 
     Processor::Processor() :
-        ProcessorBackEnd()
+        ProcessorBackEnd(),
+        absorb()
     {
     }
 
@@ -195,12 +196,14 @@ namespace audio
 #if PPDHasHQ
         oversampler.setEnabled(params[PID::HQ]->getValMod() > .5f);
         oversampler.prepare(sampleRate, maxBlockSize);
-        //const auto sampleRateUp = oversampler.getFsUp();
-        //const auto sampleRateUpF = static_cast<float>(sampleRateUp);
-        //const auto blockSizeUp = oversampler.getBlockSizeUp();
+        const auto sampleRateUp = oversampler.getFsUp();
+        const auto sampleRateUpF = static_cast<float>(sampleRateUp);
+        const auto blockSizeUp = oversampler.getBlockSizeUp();
         latency = oversampler.getLatency();
 #endif
         const auto sampleRateF = static_cast<float>(sampleRate);
+
+        absorb.prepare(sampleRateUpF, blockSizeUp);
 
         dryWetMix.prepare(sampleRateF, maxBlockSize, latency);
 
@@ -215,7 +218,7 @@ namespace audio
     {
         const ScopedNoDenormals noDenormals;
 
-        midiLearn(midi);
+        //midiLearn(midi);
         macroProcessor();
 
         auto mainBus = getBus(true, 0);
@@ -227,6 +230,8 @@ namespace audio
         const auto numSamples = mainBuffer.getNumSamples();
         if (numSamples == 0)
             return;
+
+        midiManager(midi, numSamples);
 
         if (params[PID::Power]->getValMod() < .5f)
             return processBlockBypassed(buffer, midi);
@@ -267,21 +272,22 @@ namespace audio
 #else
             auto resampledBuf = &buffer;
 #endif
+            auto resampledMainBuf = mainBus->getBusBuffer(*resampledBuf);
             
 #if PPDHasSidechain
         if (wrapperType != wrapperType_Standalone)
         {
-            const auto scBus = getBus(true, 1);
+            auto scBus = getBus(true, 1);
             if (scBus != nullptr)
                 if(scBus->isEnabled())
                 {
-                    const auto scBuffer = scBus->getBusBuffer(*resampledBuf);
+                    auto scBuffer = scBus->getBusBuffer(*resampledBuf);
 
                     processBlockCustom(
-                        resampledBuf->getArrayOfWritePointers(),
-                        resampledBuf->getNumChannels(),
-                        resampledBuf->getNumSamples(),
-                        scBuffer.getArrayOfReadPointers(),
+                        resampledMainBuf.getArrayOfWritePointers(),
+                        resampledMainBuf.getNumChannels(),
+                        resampledMainBuf.getNumSamples(),
+                        scBuffer.getArrayOfWritePointers(),
                         scBuffer.getNumChannels()
                     );
                 }
@@ -292,9 +298,9 @@ namespace audio
         }
 #else
         processBlockCustom(
-            resampledBuf->getArrayOfWritePointers(),
-            resampledBuf->getNumChannels(),
-            resampledBuf->getNumSamples()
+            resampledMainBuf.getArrayOfWritePointers(),
+            resampledMainBuf.getNumChannels(),
+            resampledMainBuf.getNumSamples()
         );
 #endif
             
@@ -329,20 +335,18 @@ namespace audio
 
     void Processor::processBlockCustom(float** samples, int numChannels, int numSamples
 #if PPDHasSidechain
-        , const float** samplesSC, int numChannelsSC
+        , float** samplesSC, int numChannelsSC
 #endif
     ) noexcept
     {
-        for (auto ch = 0; ch < numChannels; ++ch)
-        {
-            const auto chSC = ch % numChannelsSC;
-            const auto smplsSC = samplesSC[chSC];
-            
-            auto smpls = samples[ch];
+        auto rm = params[PID::AbsorbRM]->getValModDenorm();
+        auto am = params[PID::AbsorbAM]->getValModDenorm();
+        auto shapr = params[PID::AbsorbShapr]->getValModDenorm();
+        auto crushr = params[PID::AbsorbCrushr]->getValModDenorm();
+        auto foldr = params[PID::AbsorbFoldr]->getValModDenorm();
 
-            for (auto s = 0; s < numSamples; ++s)
-                smpls[s] *= smplsSC[s] * 2.f;
-        }
+        absorb(samples, numChannels, numSamples, samplesSC, numChannelsSC,
+            rm, am, shapr, crushr, foldr);
     }
 
     void Processor::releaseResources() {}
