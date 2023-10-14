@@ -3,7 +3,7 @@
 
 namespace audio
 {
-	void encodeMS(float** samples, int numSamples, int ch0) noexcept
+	void encodeMS(float* const* samples, int numSamples, int ch0) noexcept
 	{
 		const auto ch1 = ch0 + 1;
 
@@ -20,7 +20,7 @@ namespace audio
 			SIMD::multiply(samples[ch], .5f, numSamples);
 	}
 
-	void decodeMS(float** samples, int numSamples, int ch0) noexcept
+	void decodeMS(float* const* samples, int numSamples, int ch0) noexcept
 	{
 		const auto ch1 = ch0 + 1;
 

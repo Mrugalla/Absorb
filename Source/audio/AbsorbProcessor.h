@@ -25,8 +25,8 @@ namespace audio
                 foldr.prepare(sampleRate, blockSize, 10.f);
             }
 
-            void operator()(float** samples, int numChannels, int numSamples,
-                float** samplesSC, int numChannelsSC,
+            void operator()(float* const* samples, int numChannels, int numSamples,
+                float* const* samplesSC, int numChannelsSC,
                 float _rm, float _am, float _shapr, float _crushr, float _foldr) noexcept
             {
                 auto rmBuf = rm(Decibels::decibelsToGain(_rm, -20.f), numSamples);
@@ -90,8 +90,8 @@ namespace audio
             textures.prepare(sampleRate, blockSize);
         }
 
-        void operator()(float** samples, int numChannels, int numSamples,
-            float** samplesSC, int numChannelsSC,
+        void operator()(float* const* samples, int numChannels, int numSamples,
+            float* const* samplesSC, int numChannelsSC,
             float _rm, float _am, float _shapr, float _crushr, float _foldr) noexcept
         {
             textures(samples, numChannels, numSamples, samplesSC, numChannelsSC,

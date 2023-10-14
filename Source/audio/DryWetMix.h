@@ -3,77 +3,75 @@
 #include "WHead.h"
 #include <array>
 
-namespace audio
-{
-	class DryWetMix
-	{
-		struct LatencyCompensation
-		{
-			LatencyCompensation();
+namespace audio {
+class DryWetMix {
+    struct LatencyCompensation {
+        LatencyCompensation();
 
-			/*blockSize, latency*/
-			void prepare(int, int);
+        /*blockSize, latency*/
+        void prepare(int, int);
 
-			/*dry,inputSamples,numChannels,numSamples*/
-			void operator()(float**, float**, int, int) noexcept;
+        /*dry,inputSamples,numChannels,numSamples*/
+        void operator()(float* const*, float* const*, int, int) noexcept;
 
-		protected:
-			AudioBuffer ring;
-			WHead wHead;
-			int latency;
-		};
+    protected:
+        AudioBuffer ring;
+        WHead wHead;
+        int latency;
+    };
 
-		enum
-		{
+    enum {
 #if PPDHasGainIn
-			GainIn,
+        GainIn,
 #endif
-			MixD,
-			MixW,
-			Gain,
-			NumBufs
-		};
+        MixD,
+        MixW,
+        Gain,
+        NumBufs
+    };
 
-	public:
-		DryWetMix();
+public:
+    DryWetMix();
 
-		/*sampleRate, blockSize, latency*/
-		void prepare(float, int, int);
+    /*sampleRate, blockSize, latency*/
+    void prepare(float, int, int);
 
-		/*samples, numChannels, numSamples, gainInP, mixP, gainP, polarityP, unityGainP*/
-		void saveDry(
-			float**, int, int,
+    /*samples, numChannels, numSamples, gainInP, mixP, gainP, polarityP, unityGainP*/
+    void saveDry(
+        float* const*, int, int,
 #if PPDHasGainIn
-			float,
+        float,
 #endif
-			float, float
+        float, float
 #if PPDHasPolarity
-			, float
+        ,
+        float
 #endif
 #if PPDHasUnityGain && PPDHasGainIn
-			, float
+        ,
+        float
 #endif
-		) noexcept;
+        ) noexcept;
 
-		/*samples, numChannels, numSamples*/
-		void processBypass(float**, int, int) noexcept;
+    /*samples, numChannels, numSamples*/
+    void processBypass(float* const*, int, int) noexcept;
 
-		/*samples, numChannels, numSamples*/
-		void processOutGain(float**, int, int) const noexcept;
+    /*samples, numChannels, numSamples*/
+    void processOutGain(float* const*, int, int) const noexcept;
 
-		/*samples, numChannels, numSamples*/
-		void processMix(float**, int, int) const noexcept;
+    /*samples, numChannels, numSamples*/
+    void processMix(float* const*, int, int) const noexcept;
 
-	protected:
-		LatencyCompensation latencyCompensation;
+protected:
+    LatencyCompensation latencyCompensation;
 
-		std::array<std::vector<float>, NumBufs> bufs;
-		
+    std::array<std::vector<float>, NumBufs> bufs;
+
 #if PPDHasGainIn
-		Smooth gainInSmooth;
+    Smooth gainInSmooth;
 #endif
-		Smooth mixSmooth, gainSmooth;
+    Smooth mixSmooth, gainSmooth;
 
-		AudioBuffer dryBuf;
-	};
+    AudioBuffer dryBuf;
+};
 }

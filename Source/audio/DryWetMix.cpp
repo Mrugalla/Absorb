@@ -25,7 +25,7 @@ namespace audio
 		}
 	}
 
-	void DryWetMix::LatencyCompensation::operator()(float** dry, float** inputSamples, int numChannels, int numSamples) noexcept
+	void DryWetMix::LatencyCompensation::operator()(float* const* dry, float* const* inputSamples, int numChannels, int numSamples) noexcept
 	{
 		if (latency != 0)
 		{
@@ -79,7 +79,7 @@ namespace audio
 			buf.resize(blockSize);
 	}
 
-	void DryWetMix::saveDry(float** samples, int numChannels, int numSamples,
+	void DryWetMix::saveDry(float* const* samples, int numChannels, int numSamples,
 #if PPDHasGainIn
 		float gainInP,
 #endif
@@ -134,7 +134,7 @@ namespace audio
 #endif
 	}
 
-	void DryWetMix::processBypass(float** samples, int numChannels, int numSamples) noexcept
+	void DryWetMix::processBypass(float* const* samples, int numChannels, int numSamples) noexcept
 	{
 		latencyCompensation(
 			dryBuf.getArrayOfWritePointers(),
@@ -154,7 +154,7 @@ namespace audio
 		}
 	}
 
-	void DryWetMix::processOutGain(float** samples, int numChannels, int numSamples) const noexcept
+	void DryWetMix::processOutGain(float* const* samples, int numChannels, int numSamples) const noexcept
 	{
 		for (auto ch = 0; ch < numChannels; ++ch)
 		{
@@ -163,7 +163,7 @@ namespace audio
 		}
 	}
 
-	void DryWetMix::processMix(float** samples, int numChannels, int numSamples) const noexcept
+	void DryWetMix::processMix(float* const* samples, int numChannels, int numSamples) const noexcept
 	{
 		for (auto ch = 0; ch < numChannels; ++ch)
 		{

@@ -3,8 +3,8 @@
 namespace audio
 {
 	/*samples, numSamples, chStart*/
-	void encodeMS(float**, int, int) noexcept;
+	void encodeMS(float* const*, int, int) noexcept;
 	
 	/*samples, numSamples, chStart*/
-	void decodeMS(float**, int, int) noexcept;
+	void decodeMS(float* const*, int, int) noexcept;
 }
