@@ -9,7 +9,7 @@ namespace audio
 			samples[s] = std::sqrt(samples[s] * samples[s]);
 	}
 	
-	inline void rectify(float** samples, int numChannels, int numSamples) noexcept
+	inline void rectify(float* const* samples, int numChannels, int numSamples) noexcept
 	{
 		for (auto ch = 0; ch < numChannels; ++ch)
 			rectify(samples[ch], numSamples);

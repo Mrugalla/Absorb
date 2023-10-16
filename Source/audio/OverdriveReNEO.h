@@ -77,7 +77,7 @@ namespace audio
 			Fs = sampleRate;
 		}
 
-		void operator()(float** samples, int numChannels, int numSamples,
+		void operator()(float* const* samples, int numChannels, int numSamples,
 			float driveP/*[0,1]*/, float muffleP/*[20, 20000]hz*/, float panP/*[-1,1]*/, float scrapP/*[0,1]*/) noexcept
 		{
 			const auto muffleBuf = muffled(muffleP, numSamples);
@@ -113,7 +113,7 @@ namespace audio
 				{
 					prepare(sampleRate, blockSize);
 				},
-				[&](float** samples, int numChannels, int numSamples, float valPDenorm)
+				[&](float* const* samples, int numChannels, int numSamples, float valPDenorm)
 				{
 					operator()(samples, numChannels, numSamples, 0.f, valPDenorm, 0.f, 0.f);
 				},
@@ -129,7 +129,7 @@ namespace audio
 				{
 					prepare(sampleRate, blockSize);
 				},
-				[&](float** samples, int numChannels, int numSamples, float valPDenorm)
+				[&](float* const* samples, int numChannels, int numSamples, float valPDenorm)
 				{
 					operator()(samples, numChannels, numSamples, valPDenorm, 20000.f, 0.f, 0.f);
 				},
@@ -145,7 +145,7 @@ namespace audio
 				{
 					prepare(sampleRate, blockSize);
 				},
-				[&](float** samples, int numChannels, int numSamples, float valPDenorm)
+				[&](float* const* samples, int numChannels, int numSamples, float valPDenorm)
 				{
 					operator()(samples, numChannels, numSamples, .5f, 20000.f, 0.f, valPDenorm);
 				},
@@ -172,7 +172,7 @@ namespace audio
 			}
 		}
 
-		void processBlockStereo(float** samples, int numChannels, int numSamples,
+		void processBlockStereo(float* const* samples, int numChannels, int numSamples,
 			const float* muffleBuf, const float* driveBuf, float panP, const float* scrapBuf) noexcept
 		{
 			updatePanVecs(panP, numSamples);

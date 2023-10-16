@@ -93,9 +93,9 @@ namespace audio
         void processBlock(AudioBuffer&, juce::MidiBuffer&);
         
         /* samples,numChannels,numSamples,samplesSC,numChannelsSC */
-        void processBlockCustom(float**, int, int
+        void processBlockCustom(float* const*, int, int
 #if PPDHasSidechain
-            , float**, int
+            , float* const*, int
 #endif
         ) noexcept;
 

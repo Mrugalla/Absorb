@@ -66,7 +66,7 @@ namespace audio
 			stopTimer();
 		}
 
-		void operator()(float** samples, int numChannels, int numSamples) noexcept
+		void operator()(float* const* samples, int numChannels, int numSamples) noexcept
 		{
 			for (auto ch = 0; ch < numChannels; ++ch)
 			{

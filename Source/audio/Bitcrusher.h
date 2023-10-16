@@ -10,7 +10,7 @@ namespace audio
 			samples[s] = std::rint(samples[s] * gain) * gainInv;
 	}
 
-	inline void crush(float** samples, int numChannels, int numSamples, float gain)
+	inline void crush(float* const* samples, int numChannels, int numSamples, float gain)
 	{
 		const auto gainInv = 1.f / gain;
 		for (auto ch = 0; ch < numChannels; ++ch)
